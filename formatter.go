@@ -1,5 +1,3 @@
-// Custom pretty, penambahan fungsi chop dan warna.
-// Custom pretty, penambahan fungsi chop dan warna.
 package pretty
 
 import (
@@ -82,7 +80,8 @@ func (p *printer) printInline(v reflect.Value, x interface{}, showType bool) {
 		io.WriteString(p, v.Type().String())
 		fmt.Fprintf(p, "(%#v)", x)
 	} else {
-		fmt.Fprintf(p, "%#v", x)
+		//fmt.Fprintf(p, "%#v", x)
+		fmt.Fprintf(p, "%#v", x) // %#v = hexa, %#d = decimal
 	}
 }
 
@@ -94,6 +93,7 @@ type visit struct {
 }
 
 func (p *printer) printValue(v reflect.Value, showType, quote bool) {
+	var vlen int
 	if p.depth > 10 {
 		io.WriteString(p, "!%v(DEPTH EXCEEDED)")
 		return
@@ -126,7 +126,7 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 				pp = p.indent()
 			}
 			keys := v.MapKeys()
-			vlen := v.Len()
+			vlen = v.Len()
 			if vlen > 20 {
 				vlen = 20
 			}
@@ -184,7 +184,9 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 			for i := 0; i < v.NumField(); i++ {
 				showTypeInStruct := true
 				if f := t.Field(i); f.Name != "" {
-					io.WriteString(pp, f.Name)
+					io.WriteString(pp, f.Name) // dipakai untuk print nama field
+					// io.WriteString(pp, " sdf ")
+
 					writeByte(pp, ':')
 					if expand {
 						writeByte(pp, '\t')
@@ -238,12 +240,19 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 			pp = p.indent()
 		}
 
-		vlen := v.Len()
-		//print("vlen= ", vlen, "\n")
+		// Custom formatter by Umar
+
+		vlen = v.Len()
+		// print("vlen= ", strconv.Itoa(vlen), "\n")
+		strVlen := strconv.Itoa(v.Len())
+		io.WriteString(pp, "(")
+		io.WriteString(pp, strVlen) //untuk array bagus, tapi
+		io.WriteString(pp, ") ")
 		if vlen > 8 {
 			for i := 0; i < 3; i++ {
 				showTypeInSlice := t.Elem().Kind() == reflect.Interface
 				pp.printValue(v.Index(i), showTypeInSlice, true)
+
 				if expand {
 					io.WriteString(pp, ",\n")
 				} else if i < v.Len()-1 {
@@ -256,6 +265,7 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 				pp.printValue(v.Index(i), showTypeInSlice, true)
 				if expand {
 					io.WriteString(pp, ",\n")
+
 				} else if i < v.Len()-1 {
 					io.WriteString(pp, ", ")
 				}
