@@ -1,3 +1,5 @@
+// Custom pretty, penambahan fungsi chop dan warna.
+// Custom pretty, penambahan fungsi chop dan warna.
 package pretty
 
 import (
@@ -124,7 +126,11 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 				pp = p.indent()
 			}
 			keys := v.MapKeys()
-			for i := 0; i < v.Len(); i++ {
+			vlen := v.Len()
+			if vlen > 20 {
+				vlen = 20
+			}
+			for i := 0; i < vlen; i++ {
 				k := keys[i]
 				mv := v.MapIndex(k)
 				pp.printValue(k, false, true)
@@ -158,7 +164,14 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 		}
 
 		if showType {
-			io.WriteString(p, t.String())
+			if p.depth == 0 {
+				// fmt.Println("depth: ", p.depth)
+				io.WriteString(p, "\033[1;97m")
+				io.WriteString(p, t.String())
+				io.WriteString(p, "\033[0m")
+			} else {
+				io.WriteString(p, t.String())
+			}
 		}
 		writeByte(p, '{')
 		if nonzero(v) {
@@ -205,7 +218,9 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 	case reflect.Array, reflect.Slice:
 		t := v.Type()
 		if showType {
+			// io.WriteString(p, "\033[1;33m") // 	WarningColor = "\033[1;33m%s\033[0m"
 			io.WriteString(p, t.String())
+			// io.WriteString(p, "\033[0m")
 		}
 		if v.Kind() == reflect.Slice && v.IsNil() && showType {
 			io.WriteString(p, "(nil)")
@@ -222,15 +237,42 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 			writeByte(p, '\n')
 			pp = p.indent()
 		}
-		for i := 0; i < v.Len(); i++ {
-			showTypeInSlice := t.Elem().Kind() == reflect.Interface
-			pp.printValue(v.Index(i), showTypeInSlice, true)
-			if expand {
-				io.WriteString(pp, ",\n")
-			} else if i < v.Len()-1 {
-				io.WriteString(pp, ", ")
+
+		vlen := v.Len()
+		//print("vlen= ", vlen, "\n")
+		if vlen > 8 {
+			for i := 0; i < 3; i++ {
+				showTypeInSlice := t.Elem().Kind() == reflect.Interface
+				pp.printValue(v.Index(i), showTypeInSlice, true)
+				if expand {
+					io.WriteString(pp, ",\n")
+				} else if i < v.Len()-1 {
+					io.WriteString(pp, ", ")
+				}
 			}
+			io.WriteString(pp, " ... ")
+			for i := vlen - 3; i < vlen; i++ {
+				showTypeInSlice := t.Elem().Kind() == reflect.Interface
+				pp.printValue(v.Index(i), showTypeInSlice, true)
+				if expand {
+					io.WriteString(pp, ",\n")
+				} else if i < v.Len()-1 {
+					io.WriteString(pp, ", ")
+				}
+			}
+		} else {
+			for i := 0; i < vlen; i++ {
+				showTypeInSlice := t.Elem().Kind() == reflect.Interface
+				pp.printValue(v.Index(i), showTypeInSlice, true)
+				if expand {
+					io.WriteString(pp, ",\n")
+				} else if i < v.Len()-1 {
+					io.WriteString(pp, ", ")
+				}
+			}
+
 		}
+
 		if expand {
 			pp.tw.Flush()
 		}
