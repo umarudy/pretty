@@ -1,6 +1,6 @@
 package pretty
 
-    import "github.com/kr/pretty"
+    import "github.com/umarudy/pretty"
 
     Package pretty provides pretty-printing for Go values.
 
